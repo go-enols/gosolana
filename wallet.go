@@ -2,12 +2,13 @@ package gosolana
 
 import (
 	"context"
-	"gosolana/ws"
+
 	"log"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/go-enols/gosolana/ws"
 )
 
 type Wallet struct {
