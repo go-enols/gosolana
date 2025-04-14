@@ -1,4 +1,4 @@
-module gosolana
+module github.com/go-enols/gosolana
 
 go 1.23.0
 
@@ -9,7 +9,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.15.7
 	github.com/gagliardetto/solana-go v1.12.0
-	github.com/goccy/go-json v0.10.5
 	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/json-iterator/go v1.1.12
