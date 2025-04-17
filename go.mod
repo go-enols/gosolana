@@ -1,48 +1,23 @@
-module github.com/go-enols/gosolana
-
-go 1.23.0
-
-toolchain go1.23.8
-
-require (
-	github.com/buger/jsonparser v1.1.1
-	github.com/davecgh/go-spew v1.1.1
-	github.com/ethereum/go-ethereum v1.15.7
-	github.com/gagliardetto/solana-go v1.12.0
-	github.com/gorilla/rpc v1.2.0
-	github.com/gorilla/websocket v1.4.2
-	github.com/json-iterator/go v1.1.12
-	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
-	github.com/stretchr/testify v1.10.0
-	go.uber.org/zap v1.21.0
-)
-
-require (
-	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
-	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
-	github.com/blendle/zapdriver v1.3.1 // indirect
-	github.com/fatih/color v1.16.0 // indirect
-	github.com/gagliardetto/binary v0.8.0 // indirect
-	github.com/gagliardetto/treeout v0.1.4 // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/holiman/uint256 v1.3.2 // indirect
-	github.com/klauspost/compress v1.16.0 // indirect
-	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/mostynb/zstdpool-freelist v0.0.0-20201229113212-927304c0c3b1 // indirect
-	github.com/mr-tron/base58 v1.2.0 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.12.2 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
-	go.uber.org/ratelimit v0.2.0 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
-	golang.org/x/time v0.9.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
+bW9kdWxlIGdpdGh1Yi5jb20vZ28tZW5vbHMvZ29zb2xhbmEKCglnbyAxLjIzCgpyZXF1aXJlICgKCX
+aXRodWIuY29tL2J1Z2VyL2pzb25wYXJzZXIgdjEuMS4xCglnaXRodWIuY29tL2RhdmVjZ2gvZ28tc3BldyB2MS4xLjEKCWdpdGh1Yi5jb20vZ
+XRoZXJldW0vZ28tZXRoZXJldW0gdjEuMTUuNwoJZ2l0aHViLmNvbS9nYWdsaWFyZGV0dG8vc29sYW5hLWdvIHYwLjEuMgkKZ2l0aHViLmNvbS9
+nb3JpbGxhL3JwYyB2MS4yLjAKCWdpdGh1Yi5jb20vZ29yaWxsYS93ZWJzb2NrZXQgdjEuNC4yCglnaXRodWIuY29tL2pzb24taXRlcmF0b3Iv
+b28gdjEuMS4xMgkKZ2l0aHViLmNvbS9zdHJlYW1pbmdmYXN0L2xvZ2dpbmcgdjAuMC4wLTIwMjMwNjA4MTMwMzMxLWYyMmM5MTQwMzA5MQkKZ2l
+dGh1Yi5jb20vc3RyZXRjaHIvdGVzdGlmeSB2MS4xMC4wCglnby51YmVyLm9yZy96YXAgdjEuMjEuMAopCgpyZXF1aXJlICgKCWZpbGlwcG8uaW
+vL2Vkd2FyZHMyNTUxOSB2MS4wLjAtcmMuMSAvLyBpbmRpcmVjdAkJZ2l0aHViLmNvbS9hbmRyZXMtZXJic2VuL2Nsb2NrIHYwLjAuMC0yMDE2MDU
+MjYxNDUwNDUtOWUxNDYyNmNkMTI5IC8vIGluZGlyZWN0CglnaXRodWIuY29tL2JsZW5kbGUvemFwZHJpdmVyIHYxLjMuMSAvLyBpbmRpcmVjdA
+	CglnaXRodWIuY29tL2ZhdGloL2NvbG9yIHYxLjE2LjAgLy8gaW5kaXJlY3QJCglnaXRodWIuY29tL2dhZ2xpYXJkZXR0by9iaW5hcnkgdjAuOC4
+wCg	Ly8gaW5kaXJlY3QJCglnaXRodWIuY29tL2dhZ2xpYXJkZXR0by90cmVlb3V0IHYwLjEuNCAvLyBpbmRpcmVjdAkJCglnaXRodWIuY29tL2dv
+b2dsZS91dWlkIHYxLjYuMCAvLyBpbmRpcmVjdAkJCglnaXRodWIuY29tL2hvbGltYW4vdWludDI1NiB2MS4zLjIgLy8gaW5kaXJlY3QJCQln
+aXRodWIuY29tL2tsYXVzcG9zdC9jb21wcmVzcyB2MS4xNi4wIC8vIGluZGlyZWN0CgkKZ2l0aHViLmNvbS9sb2dydXNvcmdydS9hdXJvcmEg
+djIuMC4zK2luY29tcGF0aWJsZSAvLyBpbmRpcmVjdAkJCglnaXRodWIuY29tL21hdHRuL2dvLWNvbG9yYWJsZSB2MC4xLjEzIC8vIGluZGlyZWN
+tAkJCglnaXRodWIuY29tL21hdHRuL2dvLWlzYXR0eSB2MC4wLjIwIC8vIGluZGlyZWN0CgkKZ2l0aHViLmNvbS9taXRjaGVsbGgvZ28tdGVzdG
+aW5nLWludGVyZmFjZSB2MS4xNC4xIC8vIGluZGlyZWN0CgkKZ2l0aHViLmNvbS9tb2Rlcm4tZ28vY29uY3VycmVudCB2MC4wLjAtMjAxODAzMD
+YwMTI2NDQtYmFjZDljN2VmZWRkIC8vIGluZGlyZWN0CgkKZ2l0aHViLmNvbS9tb2Rlcm4tZ28vcmVmbGVjdDIgdjEuMC4yIC8vIGluZGlyZWN
+tAkJCglnaXRodWIuY29tL21vc3R5bmIvenN0ZHBvb2wtZnJlZWxpc3QgdjAuMC4wLTIwMjAxMjI5MTEzMjEyLTkyNzMwNGMwYzNiMSAvLyBpbmRp
+cmVjdAkJCglnaXRodWIuY29tL21yLXRyb24vYmFzZTU4IHYxLjIuMCAvLyBpbmRpcmVjdAkJCglnaXRodWIuY29tL3BtZXphcmQvZ28tZGlmZm
+xpYiB2MS4wLjAgLy8gaW5kaXJlY3QJCglnby5tb25nb2RiLm9yZy9tb25nby1kcml2ZXIgdjEuMTIuMiAvLyBpbmRpcmVjdAkJCglnby51YmV
+ylm9yZy9hdG9taWMgdjEuNy4wIC8vIGluZGlyZWN0CgkKZ28udWJlci5vcmcvbXVsdGllcnIgdjEuNi4wIC8vIGluZGlyZWN0CgkKZ28udWJl
+ylvcmcvcmF0ZWxpbWl0IHYwLjIuMCAvLyBpbmRpcmVjdAkJCglnb2xhbmcub3JnL3gvY3J5cHRvIHYwLjM1LjAgLy8gaW5kaXJlY3QJCQln
+b2xhbmcub3JnL3gvcyB2MC4zMC4wIC8vIGluZGlyZWN0CgkKZ29sYW5nLm9yZy94L3Rlcm0gdjAuMjkuMCAvLyBpbmRpcmVjdAkJCglnb2xh
+bmcub3JnL3gvdGltZSB2MC45LjAgLy8gaW5kaXJlY3QJCQlnb3Bjay5pbi95YW1sLnYzIHYzLjAuMSAvLyBpbmRpcmVjdCkK
