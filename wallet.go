@@ -1,15 +1,52 @@
 package gosolana
 
 import (
+	"bytes"
 	"context"
-
+	"encoding/binary"
 	"log"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/go-enols/gosolana/ws"
 )
+
+// Metaplex Metadata Program ID
+var metaplexProgramID = solana.MustPublicKeyFromBase58("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+
+// 派生Metaplex Metadata账户地址
+func deriveMetadataPDA(mint solana.PublicKey) (solana.PublicKey, error) {
+	seeds := [][]byte{
+		[]byte("metadata"),
+		metaplexProgramID.Bytes(),
+		mint.Bytes(),
+	}
+	pda, _, err := solana.FindProgramAddress(seeds, metaplexProgramID)
+	return pda, err
+}
+
+// Metaplex Metadata结构体（只解析常用字段）
+type MetaplexMetadata struct {
+	Name   [32]byte
+	Symbol [10]byte
+	// ...你可以根据需要扩展更多字段
+}
+
+// 解析Metaplex Metadata
+func parseMetaplexMetadata(data []byte) (name, symbol string) {
+	if len(data) < 44 {
+		return "", ""
+	}
+	var meta MetaplexMetadata
+	buf := bytes.NewReader(data[1:43]) // 跳过第一个字节（key类型）
+	binary.Read(buf, binary.LittleEndian, &meta)
+	name = strings.TrimRight(string(meta.Name[:]), "\x00")
+	symbol = strings.TrimRight(string(meta.Symbol[:]), "\x00")
+	return name, symbol
+}
 
 type Wallet struct {
 	rpc        *rpc.Client
@@ -141,4 +178,68 @@ func (w *Wallet) GetTransaction(ctx context.Context, sign solana.Signature, opti
 			return true, nil
 		}
 	}
+}
+
+func (w *Wallet) GetTokenAccounts(walletAddress string) ([]solana.PublicKey, error) {
+	pubKey, _ := solana.PublicKeyFromBase58(walletAddress)
+
+	// 获取所有代币账户
+	accounts, err := w.rpc.GetTokenAccountsByOwner(
+		context.TODO(),
+		pubKey,
+		&rpc.GetTokenAccountsConfig{
+			ProgramId: &token.ProgramID,
+		},
+		&rpc.GetTokenAccountsOpts{
+			Encoding: "jsonParsed",
+		},
+	)
+
+	var tokenIDs []solana.PublicKey
+	for _, acc := range accounts.Value {
+		tokenIDs = append(tokenIDs, acc.Pubkey)
+	}
+	return tokenIDs, err
+}
+
+type TokenMetadata struct {
+	MintAddress string `json:"mint"`
+	Symbol      string `json:"symbol"`
+	Name        string `json:"name"`
+	Decimals    uint8  `json:"decimals"`
+	TotalSupply uint64 `json:"total_supply"` // 新增字段
+}
+
+func (w *Wallet) GetTokenMetadata(mintAddress solana.PublicKey) (TokenMetadata, error) {
+	// 获取代币基本信息
+	mintInfo, err := w.rpc.GetAccountInfo(context.TODO(), mintAddress)
+	if err != nil {
+		return TokenMetadata{}, err
+	}
+
+	var meta TokenMetadata
+	meta.MintAddress = mintAddress.String()
+	if mintInfo.Value != nil && mintInfo.Value.Data != nil {
+		dec := mintInfo.Value.Data.GetBinary()
+		if len(dec) >= 45 {
+			// 解析decimals
+			meta.Decimals = dec[44]
+			// 解析total supply（前8字节，uint64，小端序）
+			meta.TotalSupply = binary.LittleEndian.Uint64(dec[36:44])
+		}
+	}
+
+	// 获取Metaplex扩展元数据
+	metadataAccount, err := deriveMetadataPDA(mintAddress)
+	if err != nil {
+		return meta, err
+	}
+	metadata, err := w.rpc.GetAccountInfo(context.TODO(), metadataAccount)
+	if err == nil && metadata.Value != nil && metadata.Value.Data != nil {
+		name, symbol := parseMetaplexMetadata(metadata.Value.Data.GetBinary())
+		meta.Name = name
+		meta.Symbol = symbol
+	}
+
+	return meta, nil
 }
