@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 )
 
 // TransferInstruction 示例：转账指令扩展
@@ -67,4 +69,17 @@ func (w *Wallet) SendSol(ctx context.Context, to string, amount float64) {
 	}); err != nil {
 		return
 	}
+}
+
+// 查询多个 SPL Token 账户余额（返回 UiAmount 数组，顺序与输入一致）
+func GetMultipleAccountsBalances(ctx context.Context, client *rpc.Client, accounts []solana.PublicKey) ([]*rpc.GetTokenAccountBalanceResult, error) {
+	results := make([]*rpc.GetTokenAccountBalanceResult, len(accounts))
+	for i, acc := range accounts {
+		resp, err := client.GetTokenAccountBalance(ctx, acc, rpc.CommitmentFinalized)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = resp
+	}
+	return results, nil
 }
