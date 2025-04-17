@@ -3,49 +3,75 @@ package gosolana
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
 
-type TokenMetadata struct {
-	MintAddress string `json:"mint"`
-	Symbol      string `json:"symbol"`
-	Name        string `json:"name"`
-	Decimals    uint8  `json:"decimals"`
-	TotalSupply uint64 `json:"total_supply"` // 新增字段
+type TokenMetaOnChain struct {
+	Key                  uint8
+	UpdateAuthority      solana.PublicKey
+	Mint                 solana.PublicKey
+	Name                 string
+	Symbol               string
+	Uri                  string
+	SellerFeeBasisPoints uint16
+	PrimarySaleHappened  uint8
+	IsMutable            uint8
+	EditionNonce         uint8
+	TokenStandard        uint8
 }
 
-func GetTokenMetadata(client *rpc.Client, mintAddress solana.PublicKey) (TokenMetadata, error) {
-	// 获取代币基本信息
-	mintInfo, err := client.GetAccountInfo(context.TODO(), mintAddress)
-	if err != nil {
-		return TokenMetadata{}, err
+// 解析Metaplex Metadata账户数据
+func ParseMetaplexMetadata(data []byte) (*TokenMetaOnChain, error) {
+	if len(data) < 1+32+32+4+32+4+10+4+200+2+1+1+1+1 {
+		return nil, errors.New("metadata data too short")
 	}
+	meta := &TokenMetaOnChain{}
+	offset := 0
 
-	var meta TokenMetadata
-	meta.MintAddress = mintAddress.String()
-	if mintInfo.Value != nil && mintInfo.Value.Data != nil {
-		dec := mintInfo.Value.Data.GetBinary()
-		if len(dec) >= 45 {
-			// 解析decimals
-			meta.Decimals = dec[44]
-			// 解析total supply（前8字节，uint64，小端序）
-			meta.TotalSupply = binary.LittleEndian.Uint64(dec[36:44])
-		}
-	}
+	meta.Key = data[offset]
+	offset += 1
 
-	// 获取Metaplex扩展元数据
-	metadataAccount, err := deriveMetadataPDA(mintAddress)
-	if err != nil {
-		return meta, err
-	}
-	metadata, err := client.GetAccountInfo(context.TODO(), metadataAccount)
-	if err == nil && metadata.Value != nil && metadata.Value.Data != nil {
-		name, symbol := parseMetaplexMetadata(metadata.Value.Data.GetBinary())
-		meta.Name = name
-		meta.Symbol = symbol
-	}
+	copy(meta.UpdateAuthority[:], data[offset:offset+32])
+	offset += 32
+
+	copy(meta.Mint[:], data[offset:offset+32])
+	offset += 32
+
+	// name
+	nameLen := int(binary.LittleEndian.Uint32(data[offset : offset+4]))
+	offset += 4
+	meta.Name = string(data[offset : offset+nameLen])
+	offset += nameLen
+
+	// symbol
+	symbolLen := int(binary.LittleEndian.Uint32(data[offset : offset+4]))
+	offset += 4
+	meta.Symbol = string(data[offset : offset+symbolLen])
+	offset += symbolLen
+
+	// uri
+	uriLen := int(binary.LittleEndian.Uint32(data[offset : offset+4]))
+	offset += 4
+	meta.Uri = string(data[offset : offset+uriLen])
+	offset += uriLen
+
+	meta.SellerFeeBasisPoints = binary.LittleEndian.Uint16(data[offset : offset+2])
+	offset += 2
+
+	meta.PrimarySaleHappened = data[offset]
+	offset += 1
+
+	meta.IsMutable = data[offset]
+	offset += 1
+
+	meta.EditionNonce = data[offset]
+	offset += 1
+
+	meta.TokenStandard = data[offset]
+	// offset += 1
 
 	return meta, nil
 }
