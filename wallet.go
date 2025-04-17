@@ -1,11 +1,8 @@
 package gosolana
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"log"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gagliardetto/solana-go"
@@ -13,40 +10,6 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/go-enols/gosolana/ws"
 )
-
-// Metaplex Metadata Program ID
-var metaplexProgramID = solana.MustPublicKeyFromBase58("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
-
-// 派生Metaplex Metadata账户地址
-func deriveMetadataPDA(mint solana.PublicKey) (solana.PublicKey, error) {
-	seeds := [][]byte{
-		[]byte("metadata"),
-		metaplexProgramID.Bytes(),
-		mint.Bytes(),
-	}
-	pda, _, err := solana.FindProgramAddress(seeds, metaplexProgramID)
-	return pda, err
-}
-
-// Metaplex Metadata结构体（只解析常用字段）
-type MetaplexMetadata struct {
-	Name   [32]byte
-	Symbol [10]byte
-	// ...你可以根据需要扩展更多字段
-}
-
-// 解析Metaplex Metadata
-func parseMetaplexMetadata(data []byte) (name, symbol string) {
-	if len(data) < 44 {
-		return "", ""
-	}
-	var meta MetaplexMetadata
-	buf := bytes.NewReader(data[1:43]) // 跳过第一个字节（key类型）
-	binary.Read(buf, binary.LittleEndian, &meta)
-	name = strings.TrimRight(string(meta.Name[:]), "\x00")
-	symbol = strings.TrimRight(string(meta.Symbol[:]), "\x00")
-	return name, symbol
-}
 
 type Wallet struct {
 	rpc        *rpc.Client
