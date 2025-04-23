@@ -1,14 +1,13 @@
 module github.com/go-enols/gosolana
 
-go 1.23.0
-
-toolchain go1.24.2
+go 1.24.2
 
 require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.15.8
 	github.com/gagliardetto/solana-go v1.12.0
+	github.com/go-enols/go-log v0.0.3
 	github.com/gorilla/rpc v1.2.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/json-iterator/go v1.1.12
