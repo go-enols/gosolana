@@ -15,16 +15,17 @@ import (
 )
 
 type Option struct {
-	RpcClient  *rpc.Client
-	WsClient   *ws.Client
-	WsUrl      string
-	RpcUrl     string
-	Pkey       string
-	Headers    map[string]string
-	HTTPClient *http.Client
-	Proxy      string
-	WsProxy    string
-	TimeOut    time.Duration
+	JsonRpcClient jsonrpc.RPCClient
+	RpcClient     *rpc.Client
+	WsClient      *ws.Client
+	WsUrl         string
+	RpcUrl        string
+	Pkey          string
+	Headers       map[string]string
+	HTTPClient    *http.Client
+	Proxy         string
+	WsProxy       string
+	TimeOut       time.Duration
 }
 
 // NewDefaultOption 构建一个新的配置项
@@ -67,6 +68,9 @@ func NewDefaultOption(ctx context.Context, option ...Option) Option {
 			HTTPClient:    result.HTTPClient,
 			CustomHeaders: result.Headers,
 		}))
+		result.JsonRpcClient = jsonrpc.NewClientWithOpts(result.RpcUrl, &jsonrpc.RPCClientOpts{
+			HTTPClient: result.HTTPClient,
+		})
 	}
 	if result.WsClient == nil {
 		wsClient, err := ws.ConnectWithOptions(ctx, result.WsUrl, &ws.Options{

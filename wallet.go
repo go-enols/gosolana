@@ -8,15 +8,17 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	"github.com/go-enols/gosolana/ws"
 )
 
 type Wallet struct {
-	rpc        *rpc.Client
-	wsRpc      *ws.Client
-	Address    string
-	Base58Pkey string // base58格式的私钥
-	HashPkey   string // hash格式的私钥
+	JsonRpcClient jsonrpc.RPCClient
+	rpc           *rpc.Client
+	wsRpc         *ws.Client
+	Address       string
+	Base58Pkey    string // base58格式的私钥
+	HashPkey      string // hash格式的私钥
 
 	*solana.Wallet
 }
@@ -36,12 +38,13 @@ func NewWallet(ctx context.Context, option ...Option) (*Wallet, error) {
 
 	log.Printf("[DEBUG] 成功创建Solana钱包 | %s | %s", wall.PublicKey(), wall.PrivateKey)
 	return &Wallet{
-		rpc:        op.RpcClient,
-		Address:    wall.PublicKey().String(),
-		Base58Pkey: wall.PrivateKey.String(),
-		HashPkey:   hexutil.Encode(wall.PrivateKey),
-		Wallet:     wall,
-		wsRpc:      op.WsClient,
+		JsonRpcClient: op.JsonRpcClient,
+		rpc:           op.RpcClient,
+		Address:       wall.PublicKey().String(),
+		Base58Pkey:    wall.PrivateKey.String(),
+		HashPkey:      hexutil.Encode(wall.PrivateKey),
+		Wallet:        wall,
+		wsRpc:         op.WsClient,
 	}, nil
 }
 
@@ -163,4 +166,36 @@ func (w *Wallet) GetTokenAccounts(walletAddress string) ([]solana.PublicKey, err
 		tokenIDs = append(tokenIDs, acc.Pubkey)
 	}
 	return tokenIDs, err
+}
+
+// 注意这个方法在主网节点不可用 这是由 helius提供的
+func (w *Wallet) GetTokenAccount(
+	ctx context.Context,
+
+	// Pubkey of account to query. Required.
+	mint string,
+	offset uint64,
+	limit uint64,
+) (out any, err error) {
+	params := map[string]interface{}{
+		"page":           offset,
+		"limit":          limit,
+		"displayOptions": map[string]any{},
+		"mint":           mint,
+	}
+
+	data := jsonrpc.RPCRequest{
+		Method:  "getTokenAccounts",
+		ID:      1,
+		JSONRPC: "2.0",
+		Params:  params,
+	}
+
+	out, err = w.JsonRpcClient.CallBatch(ctx, jsonrpc.RPCRequests{
+		&data,
+	})
+	if err != nil {
+		return
+	}
+	return
 }
