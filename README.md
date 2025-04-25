@@ -28,6 +28,7 @@ go get github.com/go-enols/gosolana
 
 [订阅账户](./examples/subscribe_account/main.go)
 [查询账户余额](./examples/get_balance/main.go)
+[复用客户端](./examples/content/main.go)
 
 ## 实验性功能
 

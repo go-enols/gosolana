@@ -3,6 +3,7 @@ package gosolana
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gagliardetto/solana-go"
@@ -16,6 +17,7 @@ type Wallet struct {
 	JsonRpcClient jsonrpc.RPCClient
 	rpc           *rpc.Client
 	wsRpc         *ws.Client
+	HTTPClient    *http.Client
 	Address       string
 	Base58Pkey    string // base58格式的私钥
 	HashPkey      string // hash格式的私钥
