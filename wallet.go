@@ -2,8 +2,9 @@ package gosolana
 
 import (
 	"context"
-	"log"
 	"net/http"
+
+	"github.com/go-enols/go-log"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gagliardetto/solana-go"
