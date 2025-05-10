@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/go-enols/go-log"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
@@ -46,9 +47,9 @@ type Client struct {
 	lock                    sync.RWMutex
 	subscriptionByRequestID map[uint64]*Subscription
 	subscriptionByWSSubID   map[uint64]*Subscription
-	reconnectOnErr          bool
 	shortID                 bool
-	opt                     *Options
+	httpHeader              http.Header
+	dialer                  *websocket.Dialer
 }
 
 const (
@@ -99,22 +100,12 @@ func ConnectWithOptions(ctx context.Context, rpcEndpoint string, opt *Options) (
 	if opt != nil && opt.HttpHeader != nil && len(opt.HttpHeader) > 0 {
 		httpHeader = opt.HttpHeader
 	}
-	var resp *http.Response
-	c.conn, resp, err = dialer.DialContext(ctx, rpcEndpoint, httpHeader)
-	if err != nil {
-		if resp != nil {
-			body, _ := io.ReadAll(resp.Body)
-			err = fmt.Errorf("new ws client: dial: %w, status: %s, body: %q", err, resp.Status, string(body))
-		} else {
-			err = fmt.Errorf("new ws client: dial: %w", err)
-		}
-		return nil, err
-	}
-	c.reconnect()
-	return c, nil
+	c.httpHeader = httpHeader
+	c.dialer = dialer
+	return c, c.reconnect()
 }
 
-func (c *Client) reconnect() {
+func (c *Client) reconnect() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -126,8 +117,21 @@ func (c *Client) reconnect() {
 	}
 	select {
 	case <-c.parentCtx.Done():
-		return
+		return nil
 	default:
+		var resp *http.Response
+		var err error
+		c.conn, resp, err = c.dialer.DialContext(c.parentCtx, c.rpcURL, c.httpHeader)
+		if err != nil {
+			if resp != nil {
+				body, _ := io.ReadAll(resp.Body)
+				err = fmt.Errorf("new ws client: dial: %w, status: %s, body: %q", err, resp.Status, string(body))
+			} else {
+				err = fmt.Errorf("new ws client: dial: %w", err)
+			}
+			log.Error(err)
+			return err
+		}
 		c.connCtx, c.connCtxCancel = context.WithCancel(context.Background())
 		go func() {
 			c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -144,6 +148,7 @@ func (c *Client) reconnect() {
 		}()
 		go c.receiveMessages()
 	}
+	return nil
 }
 
 func (c *Client) sendPing() {
