@@ -8,6 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.15.8
 	github.com/gagliardetto/solana-go v1.12.0
 	github.com/go-enols/go-log v0.0.3
+	github.com/go-enols/metaplex-go v0.0.3
 	github.com/gorilla/rpc v1.2.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/json-iterator/go v1.1.12

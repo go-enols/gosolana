@@ -39,7 +39,7 @@ func NewWallet(ctx context.Context, option ...Option) (*Wallet, error) {
 		}
 	}
 
-	log.Printf("[DEBUG] 成功创建Solana钱包 | %s | %s", wall.PublicKey(), wall.PrivateKey)
+	log.Printf("成功创建Solana钱包 | %s | %s", wall.PublicKey(), wall.PrivateKey)
 	return &Wallet{
 		JsonRpcClient: op.JsonRpcClient,
 		rpc:           op.RpcClient,
@@ -59,10 +59,10 @@ func (w *Wallet) GetWsClient() *ws.Client {
 	return w.wsRpc
 }
 
-func (w *Wallet) SendTransaction(ctx context.Context, instruction []solana.Instruction) (bool, error) {
-	recentBlockHash, err := w.rpc.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+func (w *Wallet) SendTransaction(ctx context.Context, instruction []solana.Instruction, signer []solana.PrivateKey) (bool, error) {
+	recentBlockHash, err := w.GetClient().GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
-		log.Printf("[ERROR] 获取Hash失败 | %s", err)
+		log.Printf("获取Hash失败 | %s", err)
 		return false, err
 	}
 	// 构造交易
@@ -72,7 +72,7 @@ func (w *Wallet) SendTransaction(ctx context.Context, instruction []solana.Instr
 		solana.TransactionPayer(w.PublicKey()),
 	)
 	if err != nil {
-		log.Printf("[ERROR] 构建交易失败 | %s", err)
+		log.Printf("构建交易失败 | %s", err)
 		return false, err
 	}
 
@@ -84,28 +84,28 @@ func (w *Wallet) SendTransaction(ctx context.Context, instruction []solana.Instr
 		return nil
 	})
 	if err != nil {
-		log.Printf("[ERROR] 签名交易失败 | %s", err)
+		log.Printf("签名交易失败 | %s", err)
 		return false, err
 	}
-	log.Printf("[DEBUG] 签名交易输出 | %v", out)
+	log.Printf("签名交易输出 | %v", out)
 	// 7. 发送交易
-	sig, err := w.rpc.SendTransactionWithOpts(
+	sig, err := w.GetClient().SendTransactionWithOpts(
 		context.Background(),
 		tx,
 		rpc.TransactionOpts{
 			SkipPreflight:       false,
-			PreflightCommitment: rpc.CommitmentFinalized,
+			PreflightCommitment: rpc.CommitmentProcessed,
 		},
 	)
 	if err != nil {
-		log.Printf("[ERROR] 发送交易失败 | %s", err)
+		log.Printf("发送交易失败 | %s", err)
 		return false, err
 	}
-	log.Printf("[INFO] Transaction Signature: %s", sig)
-	log.Printf("[INFO] 交易详情 | %v", tx) // 打印交易详情
+	log.Printf("Transaction Signature: %s", sig)
+	log.Printf("交易详情 | %v", tx) // 打印交易详情
 	result, err := w.GetTransaction(ctx, sig)
 	if err != nil {
-		log.Printf("[ERROR] 获取交易状态失败 | %s", err)
+		log.Printf("获取交易状态失败 | %s", err)
 		return false, err
 	}
 	return result, nil
@@ -123,12 +123,12 @@ func (w *Wallet) GetTransaction(ctx context.Context, sign solana.Signature, opti
 		commitment = option[0]
 	}
 	// 等待交易确认
-	sub, err := w.wsRpc.SignatureSubscribe(
+	sub, err := w.GetWsClient().SignatureSubscribe(
 		sign,
 		commitment,
 	)
 	if err != nil {
-		log.Printf("[ERROR] Failed to subscribe to signature: %v", err)
+		log.Printf("Failed to subscribe to signature: %v", err)
 		return false, err
 	}
 	defer sub.Unsubscribe()
@@ -136,14 +136,14 @@ func (w *Wallet) GetTransaction(ctx context.Context, sign solana.Signature, opti
 	for {
 		got, err := sub.Recv(ctx)
 		if err != nil {
-			log.Printf("[ERROR] Error receiving signature status: %v", err)
+			log.Printf("Error receiving signature status: %v", err)
 			return false, err
 		}
 		if got.Value.Err != nil {
-			log.Printf("[ERROR] Transaction failed: %v", got.Value.Err)
+			log.Printf("Transaction failed: %v", got.Value.Err)
 			return false, err
 		} else {
-			log.Printf("[INFO] Transaction confirmed | %s", sign.String())
+			log.Printf("Transaction confirmed | %s", sign.String())
 			return true, nil
 		}
 	}
@@ -153,7 +153,7 @@ func (w *Wallet) GetTokenAccounts(walletAddress string) ([]solana.PublicKey, err
 	pubKey, _ := solana.PublicKeyFromBase58(walletAddress)
 
 	// 获取所有代币账户
-	accounts, err := w.rpc.GetTokenAccountsByOwner(
+	accounts, err := w.GetClient().GetTokenAccountsByOwner(
 		context.TODO(),
 		pubKey,
 		&rpc.GetTokenAccountsConfig{

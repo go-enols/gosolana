@@ -39,6 +39,7 @@ type result interface{}
 
 type Client struct {
 	rpcURL                  string
+	parentCtx               context.Context
 	conn                    *websocket.Conn
 	connCtx                 context.Context
 	connCtxCancel           context.CancelFunc
@@ -47,6 +48,7 @@ type Client struct {
 	subscriptionByWSSubID   map[uint64]*Subscription
 	reconnectOnErr          bool
 	shortID                 bool
+	opt                     *Options
 }
 
 const (
@@ -68,6 +70,7 @@ func Connect(ctx context.Context, rpcEndpoint string) (c *Client, err error) {
 // 参考 https://github.com/gorilla/websocket/issues/209
 func ConnectWithOptions(ctx context.Context, rpcEndpoint string, opt *Options) (c *Client, err error) {
 	c = &Client{
+		parentCtx:               ctx,
 		rpcURL:                  rpcEndpoint,
 		subscriptionByRequestID: map[uint64]*Subscription{},
 		subscriptionByWSSubID:   map[uint64]*Subscription{},
@@ -107,23 +110,40 @@ func ConnectWithOptions(ctx context.Context, rpcEndpoint string, opt *Options) (
 		}
 		return nil, err
 	}
-
-	c.connCtx, c.connCtxCancel = context.WithCancel(context.Background())
-	go func() {
-		c.conn.SetReadDeadline(time.Now().Add(pongWait))
-		c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-		ticker := time.NewTicker(pingPeriod)
-		for {
-			select {
-			case <-c.connCtx.Done():
-				return
-			case <-ticker.C:
-				c.sendPing()
-			}
-		}
-	}()
-	go c.receiveMessages()
+	c.reconnect()
 	return c, nil
+}
+
+func (c *Client) reconnect() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	if c.connCtxCancel != nil {
+		c.connCtxCancel()
+	}
+	if c.conn != nil {
+		c.conn.Close()
+	}
+	select {
+	case <-c.parentCtx.Done():
+		return
+	default:
+		c.connCtx, c.connCtxCancel = context.WithCancel(context.Background())
+		go func() {
+			c.conn.SetReadDeadline(time.Now().Add(pongWait))
+			c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+			ticker := time.NewTicker(pingPeriod)
+			for {
+				select {
+				case <-c.connCtx.Done():
+					return
+				case <-ticker.C:
+					c.sendPing()
+				}
+			}
+		}()
+		go c.receiveMessages()
+	}
 }
 
 func (c *Client) sendPing() {
@@ -152,6 +172,7 @@ func (c *Client) receiveMessages() {
 			_, message, err := c.conn.ReadMessage()
 			if err != nil {
 				c.closeAllSubscription(err)
+				go c.reconnect()
 				return
 			}
 			c.handleMessage(message)
